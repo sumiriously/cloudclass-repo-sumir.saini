@@ -1,0 +1,6 @@
+{
+// Preview button configuration
+   "preview": {
+         "Open Visual Studio": "https://{{domain4000}}/"
+   }
+}
