@@ -1,6 +1,6 @@
 import logging
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, redirect, request, url_for
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from werkzeug.exceptions import HTTPException
@@ -30,9 +30,15 @@ def create_app():
 
     from .routes.auth import auth
     from .routes.products import products
+    from .routes.web import web
 
     app.register_blueprint(auth)
     app.register_blueprint(products)
+    app.register_blueprint(web)
+
+    @app.route("/", methods=["GET"])
+    def home():
+        return redirect(url_for("web.ui_home"))
 
     @app.route("/health", methods=["GET"])
     def health():
@@ -48,6 +54,8 @@ def create_app():
 
     @login_manager.unauthorized_handler
     def unauthorized():
+        if request.path.startswith("/ui"):
+            return redirect(url_for("web.ui_login"))
         return jsonify({"message": "Authentication required"}), 401
 
     @app.errorhandler(HTTPException)
@@ -58,5 +66,11 @@ def create_app():
     def handle_unexpected_exception(err):
         app.logger.exception("Unhandled exception: %s", err)
         return jsonify({"message": "Internal server error"}), 500
+
+    # Bootstrap database tables for local/dev container runs.
+    # (Tests manage schema explicitly with in-memory DB setup.)
+    if not app.config.get("TESTING", False):
+        with app.app_context():
+            db.create_all()
 
     return app

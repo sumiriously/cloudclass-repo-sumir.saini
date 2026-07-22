@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+  <h2>Login to Tiki Surf Shop</h2>
+  <form method="post" action="{{ url_for('web.ui_login') }}">
+    <label>Email</label>
+    <input type="email" name="email" value="{{ email or '' }}" required />
+    <label>Password</label>
+    <input type="password" name="password" required />
+    <button class="primary" type="submit">Sign in</button>
+  </form>
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+  <h2>Create Tiki Surf Shop Account</h2>
+  <form method="post" action="{{ url_for('web.ui_register') }}">
+    <label>Email</label>
+    <input type="email" name="email" value="{{ email or '' }}" required />
+    <label>Password (min 8 chars)</label>
+    <input type="password" name="password" required />
+    <button class="primary" type="submit">Create account</button>
+  </form>
+{% endblock %}
