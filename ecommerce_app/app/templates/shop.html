@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+  <h2>Product Listing</h2>
+  <p>These surf products are stored as a Python list in <code>app/catalog.py</code> and rendered with HTML.</p>
+
+  <div class="filters">
+    <a href="{{ url_for('web.ui_shop') }}" class="{{ 'active' if not selected_category else '' }}">All</a>
+    {% for category in categories %}
+      <a href="{{ url_for('web.ui_shop', category=category) }}" class="{{ 'active' if selected_category == category else '' }}">{{ category }}</a>
+    {% endfor %}
+  </div>
+
+  {% if products %}
+    <div class="product-grid">
+      {% for product in products %}
+        <article class="product-card">
+          <div style="font-size:2rem;">{{ product.emoji }}</div>
+          <span class="badge">{{ product.category }}</span>
+          <h3>{{ product.name }}</h3>
+          <p>{{ product.description }}</p>
+          <p class="price">${{ "%.2f"|format(product.price) }}</p>
+          {% if product.in_stock %}
+            <p>In stock</p>
+          {% else %}
+            <p class="out-of-stock">Out of stock</p>
+          {% endif %}
+          <p><a href="{{ url_for('web.ui_product_detail', product_id=product.id) }}">View details</a></p>
+          {% if product.in_stock %}
+            <form method="post" action="{{ url_for('web.ui_add_to_cart') }}">
+              <input type="hidden" name="product_id" value="{{ product.id }}" />
+              <button class="primary" type="submit">Add to cart</button>
+            </form>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>No products found in this category.</p>
+  {% endif %}
+{% endblock %}

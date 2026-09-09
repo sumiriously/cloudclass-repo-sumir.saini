@@ -1,11 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
   <h1>Tiki Surf Shop</h1>
-  <p>A simple surf shop dashboard with account authentication.</p>
+  <p>Browse boards, apparel, and accessories from a product list defined in the application code.</p>
+  <p>
+    <a href="{{ url_for('web.ui_shop') }}">View the Product Listing</a>
+    &nbsp;|&nbsp;
+    <a href="{{ url_for('web.ui_cart') }}">View cart</a>
+  </p>
   {% if current_user.is_authenticated %}
     <p>You are signed in as <strong>{{ current_user.email }}</strong>.</p>
-    <a href="{{ url_for('web.ui_products') }}">Manage surf gear</a>
+    <a href="{{ url_for('web.ui_products') }}">Manage inventory</a>
   {% else %}
-    <p>Please register or log in to manage surf products.</p>
+    <p>Register or log in if you want to manage store inventory. Anyone can browse the public listing.</p>
   {% endif %}
 {% endblock %}

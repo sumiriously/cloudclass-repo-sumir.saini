@@ -1,7 +1,8 @@
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from app.catalog import get_categories, get_product_by_id, get_products_by_category
 from app.models import Product, User, db
 from app.routes.auth import validate_credentials
 from app.routes.products import validate_product_payload
@@ -100,3 +101,71 @@ def ui_add_product():
     db.session.commit()
     flash("Product added", "success")
     return redirect(url_for("web.ui_products"))
+
+
+def _cart_items():
+    cart = session.get("cart", {})
+    items = []
+    total = 0.0
+    for product_id, quantity in cart.items():
+        product = get_product_by_id(int(product_id))
+        if not product:
+            continue
+        line_total = product["price"] * quantity
+        total += line_total
+        items.append({"product": product, "quantity": quantity, "line_total": line_total})
+    return items, total
+
+
+@web.route("/ui/shop", methods=["GET"])
+def ui_shop():
+    category = (request.args.get("category") or "").strip()
+    products = get_products_by_category(category)
+    return render_template(
+        "shop.html",
+        products=products,
+        categories=get_categories(),
+        selected_category=category,
+        title="Product Listing",
+    )
+
+
+@web.route("/ui/shop/<int:product_id>", methods=["GET"])
+def ui_product_detail(product_id):
+    product = get_product_by_id(product_id)
+    if not product:
+        flash("That product is not in the catalog.", "error")
+        return redirect(url_for("web.ui_shop"))
+    return render_template("product_detail.html", product=product, title=product["name"])
+
+
+@web.route("/ui/cart", methods=["GET"])
+def ui_cart():
+    items, total = _cart_items()
+    return render_template("cart.html", items=items, total=total, title="Cart")
+
+
+@web.route("/ui/cart/add", methods=["POST"])
+def ui_add_to_cart():
+    product_id = request.form.get("product_id", type=int)
+    product = get_product_by_id(product_id) if product_id else None
+    if not product:
+        flash("That product is not in the catalog.", "error")
+        return redirect(url_for("web.ui_shop"))
+    if not product["in_stock"]:
+        flash(f"{product['name']} is currently out of stock.", "error")
+        return redirect(url_for("web.ui_shop"))
+
+    cart = session.get("cart", {})
+    key = str(product["id"])
+    cart[key] = cart.get(key, 0) + 1
+    session["cart"] = cart
+    flash(f"Added {product['name']} to your cart.", "success")
+    return redirect(url_for("web.ui_cart"))
+
+
+@web.route("/ui/cart/clear", methods=["POST"])
+def ui_clear_cart():
+    session.pop("cart", None)
+    flash("Cart cleared.", "success")
+    return redirect(url_for("web.ui_cart"))
