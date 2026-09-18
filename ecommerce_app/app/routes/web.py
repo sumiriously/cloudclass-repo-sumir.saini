@@ -2,7 +2,7 @@ from flask import Blueprint, flash, redirect, render_template, request, session,
 from flask_login import current_user, login_required, login_user, logout_user
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from app.catalog import get_categories, get_product_by_id, get_products_by_category
+from app.catalog import get_all_products, get_categories, get_product_by_id, get_products_by_category
 from app.models import Product, User, db
 from app.routes.auth import validate_credentials
 from app.routes.products import validate_product_payload
@@ -19,7 +19,8 @@ def inject_cart_count():
 
 @web.route("/ui", methods=["GET"])
 def ui_home():
-    return render_template("home.html")
+    featured = [product for product in get_all_products() if product["in_stock"]][:3]
+    return render_template("home.html", featured=featured)
 
 
 @web.route("/ui/register", methods=["GET", "POST"])

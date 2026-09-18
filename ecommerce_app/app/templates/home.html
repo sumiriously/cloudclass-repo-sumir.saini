@@ -1,16 +1,45 @@
 {% extends "base.html" %}
 {% block content %}
-  <h1>Tiki Surf Shop</h1>
-  <p>Browse boards, apparel, and accessories from a product list defined in the application code.</p>
-  <p>
-    <a href="{{ url_for('web.ui_shop') }}">View the Product Listing</a>
-    &nbsp;|&nbsp;
-    <a href="{{ url_for('web.ui_cart') }}">View cart</a>
-  </p>
-  {% if current_user.is_authenticated %}
-    <p>You are signed in as <strong>{{ current_user.email }}</strong>.</p>
-    <a href="{{ url_for('web.ui_products') }}">Manage inventory</a>
-  {% else %}
-    <p>Register or log in if you want to manage store inventory. Anyone can browse the public listing.</p>
+  <section class="hero">
+    <div class="hero-copy">
+      <span class="eyebrow">Island surf outfitters</span>
+      <h1>Ride the set. Shop the island.</h1>
+      <p class="lede">Hand-picked boards, apparel, and reef-ready accessories for clean morning sessions.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="{{ url_for('web.ui_shop') }}">Browse the shop</a>
+        <a class="btn btn-secondary" href="{{ url_for('web.ui_cart') }}">View cart</a>
+      </div>
+      {% if current_user.is_authenticated %}
+        <p>Signed in as <strong>{{ current_user.email }}</strong>. <a href="{{ url_for('web.ui_products') }}">Manage inventory</a></p>
+      {% else %}
+        <p>Anyone can shop. <a href="{{ url_for('web.ui_login') }}">Login</a> only if you need inventory tools.</p>
+      {% endif %}
+    </div>
+    <aside class="hero-card">
+      <p>This week’s lineup</p>
+      <p class="hero-stat">8 island picks</p>
+      <p>Soft-tops, shortboards, wax, and fins ready for warm water.</p>
+    </aside>
+  </section>
+
+  {% if featured %}
+    <div class="section-head">
+      <h2>Featured gear</h2>
+      <a href="{{ url_for('web.ui_shop') }}">See all products</a>
+    </div>
+    <div class="product-grid">
+      {% for product in featured %}
+        <article class="product-card">
+          <div class="product-media">{{ product.emoji }}</div>
+          <div class="card-body">
+            <span class="badge">{{ product.category }}</span>
+            <h3>{{ product.name }}</h3>
+            <p>{{ product.description }}</p>
+            <p class="price">${{ "%.2f"|format(product.price) }}</p>
+            <p><a href="{{ url_for('web.ui_product_detail', product_id=product.id) }}">View details</a></p>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
   {% endif %}
 {% endblock %}

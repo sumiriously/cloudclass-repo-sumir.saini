@@ -1,39 +1,46 @@
 {% extends "base.html" %}
 {% block content %}
   {% if placed %}
+    <span class="eyebrow">Mahalo</span>
     <h2>Order confirmed</h2>
-    <p>Thanks for shopping at Tiki Surf Shop. This is a practice checkout, so no payment was collected.</p>
+    <p class="lede">Thanks for shopping at Tiki Surf Shop. This is a practice checkout, so no payment was collected.</p>
   {% else %}
+    <span class="eyebrow">Almost there</span>
     <h2>Checkout</h2>
-    <p>Review your order, then place it to empty the cart.</p>
+    <p class="lede">Review your order, then place it to empty the cart.</p>
   {% endif %}
 
-  <table>
-    <thead>
-      <tr>
-        <th>Product</th>
-        <th>Quantity</th>
-        <th>Line total</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for item in items %}
-        <tr>
-          <td>{{ item.product.emoji }} {{ item.product.name }}</td>
-          <td>{{ item.quantity }}</td>
-          <td>${{ "%.2f"|format(item.line_total) }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  <p class="price">Order total: ${{ "%.2f"|format(total) }}</p>
-
-  {% if placed %}
-    <p><a href="{{ url_for('web.ui_shop') }}">Continue shopping</a></p>
-  {% else %}
-    <form method="post" action="{{ url_for('web.ui_checkout') }}">
-      <button class="primary" type="submit">Place order</button>
-    </form>
-    <p><a href="{{ url_for('web.ui_cart') }}">Back to cart</a></p>
-  {% endif %}
+  <div class="cart-layout">
+    <div class="panel">
+      <table>
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Line total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+            <tr>
+              <td>{{ item.product.emoji }} {{ item.product.name }}</td>
+              <td>{{ item.quantity }}</td>
+              <td>${{ "%.2f"|format(item.line_total) }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <aside class="panel">
+      <p class="price summary-total">Order total: ${{ "%.2f"|format(total) }}</p>
+      {% if placed %}
+        <a class="btn btn-primary" href="{{ url_for('web.ui_shop') }}">Continue shopping</a>
+      {% else %}
+        <form method="post" action="{{ url_for('web.ui_checkout') }}">
+          <button class="primary" type="submit">Place order</button>
+        </form>
+        <p><a href="{{ url_for('web.ui_cart') }}">Back to cart</a></p>
+      {% endif %}
+    </aside>
+  </div>
 {% endblock %}

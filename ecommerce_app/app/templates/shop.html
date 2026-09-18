@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
+  <span class="eyebrow">Catalog</span>
   <h2>Product Listing</h2>
-  <p>These surf products are stored as a Python list in <code>app/catalog.py</code> and rendered with HTML.</p>
+  <p class="lede">Boards, apparel, and accessories for the next session.</p>
 
   <div class="filters">
     <a href="{{ url_for('web.ui_shop') }}" class="{{ 'active' if not selected_category else '' }}">All</a>
@@ -14,30 +15,38 @@
     <div class="product-grid">
       {% for product in products %}
         <article class="product-card">
-          <div style="font-size:2rem;">{{ product.emoji }}</div>
-          <span class="badge">{{ product.category }}</span>
-          <h3>{{ product.name }}</h3>
-          <p>{{ product.description }}</p>
-          <p class="price">${{ "%.2f"|format(product.price) }}</p>
-          {% if product.in_stock %}
-            <p>In stock</p>
-          {% else %}
-            <p class="out-of-stock">Out of stock</p>
-          {% endif %}
-          <p><a href="{{ url_for('web.ui_product_detail', product_id=product.id) }}">View details</a></p>
-          {% if product.in_stock %}
-            <form method="post" action="{{ url_for('web.ui_add_to_cart') }}">
-              <input type="hidden" name="product_id" value="{{ product.id }}" />
-              <label>Qty
-                <input class="qty-input" type="number" name="quantity" min="1" max="20" value="1" />
-              </label>
-              <button class="primary" type="submit">Add to cart</button>
-            </form>
-          {% endif %}
+          <div class="product-media">{{ product.emoji }}</div>
+          <div class="card-body">
+            <span class="badge">{{ product.category }}</span>
+            <h3>{{ product.name }}</h3>
+            <p>{{ product.description }}</p>
+            <p class="price">${{ "%.2f"|format(product.price) }}</p>
+            {% if product.in_stock %}
+              <p class="stock">In stock</p>
+            {% else %}
+              <p class="out-of-stock">Out of stock</p>
+            {% endif %}
+            <div class="card-actions">
+              <p><a href="{{ url_for('web.ui_product_detail', product_id=product.id) }}">View details</a></p>
+              {% if product.in_stock %}
+                <form method="post" action="{{ url_for('web.ui_add_to_cart') }}">
+                  <input type="hidden" name="product_id" value="{{ product.id }}" />
+                  <div class="qty-row">
+                    <label>Qty
+                      <input class="qty-input" type="number" name="quantity" min="1" max="20" value="1" />
+                    </label>
+                    <button class="primary" type="submit">Add to cart</button>
+                  </div>
+                </form>
+              {% endif %}
+            </div>
+          </div>
         </article>
       {% endfor %}
     </div>
   {% else %}
-    <p>No products found in this category.</p>
+    <div class="empty-state panel">
+      <p>No products found in this category.</p>
+    </div>
   {% endif %}
 {% endblock %}

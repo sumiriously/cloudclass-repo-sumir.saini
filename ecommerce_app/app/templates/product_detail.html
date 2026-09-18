@@ -1,23 +1,27 @@
 {% extends "base.html" %}
 {% block content %}
   <p><a href="{{ url_for('web.ui_shop') }}">&larr; Back to Product Listing</a></p>
-  <article class="product-card">
-    <div style="font-size:2.5rem;">{{ product.emoji }}</div>
-    <span class="badge">{{ product.category }}</span>
-    <h2>{{ product.name }}</h2>
-    <p>{{ product.description }}</p>
-    <p class="price">${{ "%.2f"|format(product.price) }}</p>
-    {% if product.in_stock %}
-      <p>In stock</p>
-      <form method="post" action="{{ url_for('web.ui_add_to_cart') }}">
-        <input type="hidden" name="product_id" value="{{ product.id }}" />
-        <label>Qty
-          <input class="qty-input" type="number" name="quantity" min="1" max="20" value="1" />
-        </label>
-        <button class="primary" type="submit">Add to cart</button>
-      </form>
-    {% else %}
-      <p class="out-of-stock">Out of stock</p>
-    {% endif %}
+  <article class="detail">
+    <div class="product-media">{{ product.emoji }}</div>
+    <div>
+      <span class="badge">{{ product.category }}</span>
+      <h2>{{ product.name }}</h2>
+      <p class="lede">{{ product.description }}</p>
+      <p class="price">${{ "%.2f"|format(product.price) }}</p>
+      {% if product.in_stock %}
+        <p class="stock">In stock and ready to ship</p>
+        <form method="post" action="{{ url_for('web.ui_add_to_cart') }}">
+          <input type="hidden" name="product_id" value="{{ product.id }}" />
+          <div class="qty-row">
+            <label>Qty
+              <input class="qty-input" type="number" name="quantity" min="1" max="20" value="1" />
+            </label>
+            <button class="primary" type="submit">Add to cart</button>
+          </div>
+        </form>
+      {% else %}
+        <p class="out-of-stock">Out of stock</p>
+      {% endif %}
+    </div>
   </article>
 {% endblock %}
