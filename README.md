@@ -42,5 +42,5 @@ Added a public Product Listing page that renders a hardcoded Python product list
   Added simple extra shop features for filtering by category and viewing one product at a time.
 
 - **Session shopping cart**  
-  Added add-to-cart, cart totals, and out-of-stock handling to practice forms, sessions, and page flow.
+  Added add-to-cart with quantity, update/remove items, a cart count in the nav, and a simple checkout that confirms the order and clears the cart.
 

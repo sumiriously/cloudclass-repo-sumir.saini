@@ -66,6 +66,57 @@ def test_add_to_cart_and_view_total(client):
     html = response.get_data(as_text=True)
     assert "Palm Wax (Tropical)" in html
     assert "$8.50" in html
+    assert "Cart (1)" in html
+
+
+def test_add_to_cart_with_quantity(client):
+    response = client.post(
+        "/ui/cart/add",
+        data={"product_id": 3, "quantity": 3},
+        follow_redirects=True,
+    )
+    html = response.get_data(as_text=True)
+    assert "$25.50" in html
+    assert "Cart (3)" in html
+
+
+def test_update_and_remove_cart_item(client):
+    client.post("/ui/cart/add", data={"product_id": 3, "quantity": 2})
+    update = client.post(
+        "/ui/cart/update",
+        data={"product_id": 3, "quantity": 4},
+        follow_redirects=True,
+    )
+    assert "$34.00" in update.get_data(as_text=True)
+
+    removed = client.post(
+        "/ui/cart/remove",
+        data={"product_id": 3},
+        follow_redirects=True,
+    )
+    html = removed.get_data(as_text=True)
+    assert "Your cart is empty" in html
+    assert "Cart (3)" not in html
+
+
+def test_checkout_places_order_and_clears_cart(client):
+    client.post("/ui/cart/add", data={"product_id": 4})
+    checkout = client.get("/ui/checkout")
+    assert checkout.status_code == 200
+    assert "Leash 7ft Coil" in checkout.get_data(as_text=True)
+
+    placed = client.post("/ui/checkout", follow_redirects=True)
+    html = placed.get_data(as_text=True)
+    assert "Order confirmed" in html
+    assert "Leash 7ft Coil" in html
+
+    cart = client.get("/ui/cart")
+    assert "Your cart is empty" in cart.get_data(as_text=True)
+
+
+def test_empty_checkout_redirects(client):
+    response = client.get("/ui/checkout", follow_redirects=True)
+    assert "Your cart is empty" in response.get_data(as_text=True)
 
 
 def test_out_of_stock_cannot_be_added(client):

@@ -9,23 +9,41 @@
           <th>Quantity</th>
           <th>Price</th>
           <th>Line total</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
         {% for item in items %}
           <tr>
             <td>{{ item.product.emoji }} {{ item.product.name }}</td>
-            <td>{{ item.quantity }}</td>
+            <td>
+              <form class="inline-form" method="post" action="{{ url_for('web.ui_update_cart') }}">
+                <input type="hidden" name="product_id" value="{{ item.product.id }}" />
+                <input class="qty-input" type="number" name="quantity" min="1" max="20" value="{{ item.quantity }}" />
+                <button class="secondary" type="submit">Update</button>
+              </form>
+            </td>
             <td>${{ "%.2f"|format(item.product.price) }}</td>
             <td>${{ "%.2f"|format(item.line_total) }}</td>
+            <td>
+              <form class="inline-form" method="post" action="{{ url_for('web.ui_remove_from_cart') }}">
+                <input type="hidden" name="product_id" value="{{ item.product.id }}" />
+                <button class="secondary" type="submit">Remove</button>
+              </form>
+            </td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
     <p class="price">Cart total: ${{ "%.2f"|format(total) }}</p>
-    <form method="post" action="{{ url_for('web.ui_clear_cart') }}">
-      <button class="primary" type="submit">Clear cart</button>
-    </form>
+    <div>
+      <form class="inline-form" method="get" action="{{ url_for('web.ui_checkout') }}">
+        <button class="primary" type="submit">Checkout</button>
+      </form>
+      <form class="inline-form" method="post" action="{{ url_for('web.ui_clear_cart') }}">
+        <button class="secondary" type="submit">Clear cart</button>
+      </form>
+    </div>
   {% else %}
     <p>Your cart is empty. <a href="{{ url_for('web.ui_shop') }}">Browse the Product Listing</a>.</p>
   {% endif %}
