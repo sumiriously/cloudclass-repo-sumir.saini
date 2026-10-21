@@ -1,14 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
-  {% if placed %}
-    <span class="eyebrow">Mahalo</span>
-    <h2>Order confirmed</h2>
-    <p class="lede">Thanks for shopping at Tiki Surf Shop. This is a practice checkout, so no payment was collected.</p>
-  {% else %}
-    <span class="eyebrow">Almost there</span>
-    <h2>Checkout</h2>
-    <p class="lede">Review your order, then place it to empty the cart.</p>
-  {% endif %}
+  <span class="eyebrow">Almost there</span>
+  <h2>Checkout</h2>
+  <p class="lede">Add your name and email, then place the order. It is saved so you can track it, and a receipt is stored with the order.</p>
 
   <div class="cart-layout">
     <div class="panel">
@@ -33,14 +27,14 @@
     </div>
     <aside class="panel">
       <p class="price summary-total">Order total: ${{ "%.2f"|format(total) }}</p>
-      {% if placed %}
-        <a class="btn btn-primary" href="{{ url_for('web.ui_shop') }}">Continue shopping</a>
-      {% else %}
-        <form method="post" action="{{ url_for('web.ui_checkout') }}">
-          <button class="primary" type="submit">Place order</button>
-        </form>
-        <p><a href="{{ url_for('web.ui_cart') }}">Back to cart</a></p>
-      {% endif %}
+      <form method="post" action="{{ url_for('web.ui_checkout') }}">
+        <label for="customer_name">Name</label>
+        <input id="customer_name" name="customer_name" required maxlength="120" value="{{ customer_name or '' }}" />
+        <label for="email">Email</label>
+        <input id="email" type="email" name="email" required value="{{ email or '' }}" />
+        <button class="primary" type="submit">Place order</button>
+      </form>
+      <p><a href="{{ url_for('web.ui_cart') }}">Back to cart</a></p>
     </aside>
   </div>
 {% endblock %}

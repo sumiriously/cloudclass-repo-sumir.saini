@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+  {% if confirmed %}
+    <span class="eyebrow">Mahalo</span>
+    <h2>Order confirmed</h2>
+    <p class="lede">Order #{{ order.id }} is saved. No payment was collected. Keep this page to download the receipt.</p>
+  {% else %}
+    <span class="eyebrow">Order #{{ order.id }}</span>
+    <h2>{{ order.customer_name }}</h2>
+  {% endif %}
+
+  <div class="cart-layout">
+    <div class="panel">
+      <table>
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Line total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in order.items %}
+            <tr>
+              <td>{{ item.emoji or "" }} {{ item.product_name }}</td>
+              <td>{{ item.quantity }}</td>
+              <td>${{ "%.2f"|format(item.line_total) }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <aside class="panel">
+      <p class="price summary-total">${{ "%.2f"|format(order.total) }}</p>
+      <p><span class="badge status-{{ order.status }}">{{ order.status|capitalize }}</span></p>
+      <p>{{ order.email }}</p>
+      <p>Placed {{ order.created_at.strftime("%b %d, %Y %H:%M") }} UTC</p>
+      <p>Receipt stored in {{ storage_label }}.</p>
+      <div class="actions">
+        <a class="btn btn-secondary" href="{{ url_for('web.ui_order_receipt', order_id=order.id) }}">Download receipt</a>
+        <a class="btn btn-primary" href="{{ url_for('web.ui_shop') }}">Continue shopping</a>
+      </div>
+      {% if current_user.is_authenticated and current_user.is_admin %}
+        <form method="post" action="{{ url_for('web.ui_update_order_status', order_id=order.id) }}">
+          <label for="status">Update status</label>
+          <select id="status" name="status">
+            {% for status in statuses %}
+              <option value="{{ status }}" {{ 'selected' if status == order.status else '' }}>{{ status|capitalize }}</option>
+            {% endfor %}
+          </select>
+          <button class="secondary" type="submit">Save status</button>
+        </form>
+      {% endif %}
+      {% if current_user.is_authenticated %}
+        <p><a href="{{ url_for('web.ui_orders') }}">Back to orders</a></p>
+      {% endif %}
+    </aside>
+  </div>
+{% endblock %}

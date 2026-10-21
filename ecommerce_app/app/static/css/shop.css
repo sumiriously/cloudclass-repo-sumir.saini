@@ -309,6 +309,18 @@ button.secondary:hover, .btn-secondary:hover { background: #d5e5db; }
   color: #115e59;
 }
 
+.status-placed { background: #f4e0c8; color: #9a3412; }
+.status-processing { background: #e0f2fe; color: #075985; }
+.status-shipped { background: #dff3ee; color: #115e59; }
+.status-delivered { background: #e6f6ef; color: #0b6b3a; }
+.status-cancelled { background: #fde8e4; color: #9b1c1c; }
+
+.status-form select {
+  width: auto;
+  margin: 0;
+  padding: 0.45rem 0.6rem;
+}
+
 .price { font-weight: 800; color: var(--deep); font-size: 1.15rem; }
 .stock { font-size: 0.88rem; font-weight: 600; color: var(--lagoon); margin: 0; }
 .out-of-stock { color: #b42318; font-weight: 800; }

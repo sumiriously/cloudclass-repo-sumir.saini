@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+  <span class="eyebrow">Order management</span>
+  <h2>Orders</h2>
+  {% if current_user.is_admin %}
+    <p class="lede">You are signed in as shop staff, so this list includes every order. Update a status as the order moves from placed to delivered.</p>
+  {% else %}
+    <p class="lede">These are the orders placed with {{ current_user.email }}. Shop staff can move an order through fulfillment.</p>
+  {% endif %}
+
+  <div class="filters">
+    <a href="{{ url_for('web.ui_orders') }}" class="{{ 'active' if not selected_status else '' }}">All</a>
+    {% for status in statuses %}
+      <a href="{{ url_for('web.ui_orders', status=status) }}" class="{{ 'active' if selected_status == status else '' }}">{{ status|capitalize }}</a>
+    {% endfor %}
+  </div>
+
+  {% if orders %}
+    <div class="panel">
+      <table>
+        <thead>
+          <tr>
+            <th>Order</th>
+            <th>Customer</th>
+            <th>Placed</th>
+            <th>Total</th>
+            <th>Status</th>
+            {% if current_user.is_admin %}<th></th>{% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in orders %}
+            <tr>
+              <td><a href="{{ url_for('web.ui_order_detail', order_id=order.id) }}">#{{ order.id }}</a></td>
+              <td>{{ order.customer_name }}<br />{{ order.email }}</td>
+              <td>{{ order.created_at.strftime("%b %d, %Y") }}</td>
+              <td>${{ "%.2f"|format(order.total) }}</td>
+              <td><span class="badge status-{{ order.status }}">{{ order.status|capitalize }}</span></td>
+              {% if current_user.is_admin %}
+                <td>
+                  <form class="inline-form status-form" method="post" action="{{ url_for('web.ui_update_order_status', order_id=order.id) }}">
+                    <select name="status">
+                      {% for status in statuses %}
+                        <option value="{{ status }}" {{ 'selected' if status == order.status else '' }}>{{ status|capitalize }}</option>
+                      {% endfor %}
+                    </select>
+                    <button class="secondary" type="submit">Update</button>
+                  </form>
+                </td>
+              {% endif %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state panel">
+      <p>No orders to show.</p>
+      <p><a class="btn btn-primary" href="{{ url_for('web.ui_shop') }}">Browse the shop</a></p>
+    </div>
+  {% endif %}
+{% endblock %}

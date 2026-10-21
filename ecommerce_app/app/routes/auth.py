@@ -33,7 +33,9 @@ def register():
     if User.query.filter_by(email=email).first():
         return jsonify({"message": "Email already exists"}), 409
 
-    user = User(email=email, password_hash=generate_password_hash(password))
+    from app.orders import email_is_admin
+
+    user = User(email=email, password_hash=generate_password_hash(password), is_admin=email_is_admin(email))
     db.session.add(user)
     db.session.commit()
     return jsonify({"message": "User created"}), 201
@@ -51,6 +53,11 @@ def login():
 
     user = User.query.filter_by(email=email).first()
     if user and check_password_hash(user.password_hash, password):
+        from app.orders import email_is_admin
+
+        if email_is_admin(user.email) and not user.is_admin:
+            user.is_admin = True
+            db.session.commit()
         login_user(user)
         return jsonify({"message": "Logged in"}), 200
 

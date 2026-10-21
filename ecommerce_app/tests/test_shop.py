@@ -11,13 +11,14 @@ from app.models import db
 
 
 @pytest.fixture
-def app():
+def app(tmp_path):
     flask_app = create_app()
     flask_app.config.update(
         {
             "TESTING": True,
             "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
             "SECRET_KEY": "test-secret",
+            "RECEIPT_DIR": str(tmp_path / "receipts"),
         }
     )
 
@@ -105,7 +106,11 @@ def test_checkout_places_order_and_clears_cart(client):
     assert checkout.status_code == 200
     assert "Leash 7ft Coil" in checkout.get_data(as_text=True)
 
-    placed = client.post("/ui/checkout", follow_redirects=True)
+    placed = client.post(
+        "/ui/checkout",
+        data={"customer_name": "Kai Shore", "email": "kai@example.com"},
+        follow_redirects=True,
+    )
     html = placed.get_data(as_text=True)
     assert "Order confirmed" in html
     assert "Leash 7ft Coil" in html

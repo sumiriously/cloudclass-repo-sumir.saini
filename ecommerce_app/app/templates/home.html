@@ -10,9 +10,9 @@
         <a class="btn btn-secondary" href="{{ url_for('web.ui_cart') }}">View cart</a>
       </div>
       {% if current_user.is_authenticated %}
-        <p>Signed in as <strong>{{ current_user.email }}</strong>. <a href="{{ url_for('web.ui_products') }}">Manage inventory</a></p>
+        <p>Signed in as <strong>{{ current_user.email }}</strong>. <a href="{{ url_for('web.ui_orders') }}">View orders</a> or <a href="{{ url_for('web.ui_products') }}">manage inventory</a>.</p>
       {% else %}
-        <p>Anyone can shop. <a href="{{ url_for('web.ui_login') }}">Login</a> only if you need inventory tools.</p>
+        <p>Anyone can shop. <a href="{{ url_for('web.ui_login') }}">Login</a> with the same email you use at checkout to track your orders.</p>
       {% endif %}
     </div>
     <aside class="hero-card">

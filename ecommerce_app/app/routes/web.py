@@ -1,9 +1,20 @@
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, Response, flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.catalog import get_all_products, get_categories, get_product_by_id, get_products_by_category
-from app.models import Product, User, db
+from app.models import ORDER_STATUSES, Order, Product, User, db
+from app.orders import (
+    can_view_order,
+    email_is_admin,
+    grant_order_access,
+    load_order_receipt,
+    place_order,
+    set_order_status,
+    storage_label,
+    validate_customer,
+    visible_orders,
+)
 from app.routes.auth import validate_credentials
 from app.routes.products import validate_product_payload
 
@@ -37,7 +48,11 @@ def ui_register():
             flash("Email already exists", "error")
             return render_template("register.html", email=email), 409
 
-        user = User(email=email, password_hash=generate_password_hash(password))
+        user = User(
+            email=email,
+            password_hash=generate_password_hash(password),
+            is_admin=email_is_admin(email),
+        )
         db.session.add(user)
         db.session.commit()
         flash("Account created. Please log in.", "success")
@@ -61,6 +76,9 @@ def ui_login():
             flash("Invalid credentials", "error")
             return render_template("login.html", email=email), 401
 
+        if email_is_admin(user.email) and not user.is_admin:
+            user.is_admin = True
+            db.session.commit()
         login_user(user)
         flash("Logged in successfully", "success")
         return redirect(url_for("web.ui_products"))
@@ -253,19 +271,112 @@ def ui_checkout():
         return redirect(url_for("web.ui_cart"))
 
     if request.method == "POST":
-        session.pop("cart", None)
-        return render_template(
-            "checkout.html",
-            items=items,
-            total=total,
-            placed=True,
-            title="Order confirmed",
-        )
+        customer_name = request.form.get("customer_name") or ""
+        email = request.form.get("email") or ""
+        error = validate_customer(customer_name, email)
+        if error:
+            flash(error, "error")
+            return render_template(
+                "checkout.html",
+                items=items,
+                total=total,
+                customer_name=customer_name.strip(),
+                email=email.strip(),
+                title="Checkout",
+            ), 400
 
+        order = place_order(
+            customer_name=customer_name.strip(),
+            email=email.strip(),
+            cart_items=items,
+            total=total,
+            user_id=current_user.id if current_user.is_authenticated else None,
+        )
+        session.pop("cart", None)
+        grant_order_access(order.id)
+        flash("Order confirmed.", "success")
+        return redirect(url_for("web.ui_order_detail", order_id=order.id, confirmed=1))
+
+    email = current_user.email if current_user.is_authenticated else ""
     return render_template(
         "checkout.html",
         items=items,
         total=total,
-        placed=False,
+        customer_name="",
+        email=email,
         title="Checkout",
     )
+
+
+def _order_or_redirect(order_id):
+    order = db.session.get(Order, order_id)
+    if order and can_view_order(order):
+        return order, None
+    flash("That order is not available.", "error")
+    if current_user.is_authenticated:
+        return None, redirect(url_for("web.ui_orders"))
+    return None, redirect(url_for("web.ui_login"))
+
+
+@web.route("/ui/orders", methods=["GET"])
+@login_required
+def ui_orders():
+    selected = (request.args.get("status") or "").strip()
+    if selected not in ORDER_STATUSES:
+        selected = ""
+    return render_template(
+        "orders.html",
+        orders=visible_orders(selected or None),
+        statuses=ORDER_STATUSES,
+        selected_status=selected,
+        title="Orders",
+    )
+
+
+@web.route("/ui/orders/<int:order_id>", methods=["GET"])
+def ui_order_detail(order_id):
+    order, response = _order_or_redirect(order_id)
+    if response:
+        return response
+    return render_template(
+        "order_detail.html",
+        order=order,
+        statuses=ORDER_STATUSES,
+        confirmed=request.args.get("confirmed") == "1",
+        storage_label=storage_label(order.receipt_storage),
+        title=f"Order #{order.id}",
+    )
+
+
+@web.route("/ui/orders/<int:order_id>/status", methods=["POST"])
+@login_required
+def ui_update_order_status(order_id):
+    order = db.session.get(Order, order_id)
+    if not order or not can_view_order(order):
+        flash("That order is not available.", "error")
+        return redirect(url_for("web.ui_orders"))
+    if not current_user.is_admin:
+        flash("Only shop staff can update order status.", "error")
+        return redirect(url_for("web.ui_order_detail", order_id=order.id))
+
+    status = (request.form.get("status") or "").strip()
+    if not set_order_status(order, status):
+        flash("Choose a valid order status.", "error")
+        return redirect(url_for("web.ui_order_detail", order_id=order.id))
+
+    flash(f"Order #{order.id} marked {status}.", "success")
+    return redirect(url_for("web.ui_order_detail", order_id=order.id))
+
+
+@web.route("/ui/orders/<int:order_id>/receipt", methods=["GET"])
+def ui_order_receipt(order_id):
+    order, response = _order_or_redirect(order_id)
+    if response:
+        return response
+    body = load_order_receipt(order)
+    if body is None:
+        flash("The receipt for this order is not available.", "error")
+        return redirect(url_for("web.ui_order_detail", order_id=order.id))
+    response = Response(body, mimetype="text/plain")
+    response.headers["Content-Disposition"] = f'attachment; filename="order-{order.id}.txt"'
+    return response

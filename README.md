@@ -44,3 +44,18 @@ Added a public Product Listing page that renders a hardcoded Python product list
 - **Session shopping cart**  
   Added add-to-cart with quantity, update/remove items, a cart count in the nav, and a simple checkout that confirms the order and clears the cart.
 
+## Feature Added: Order Management and DigitalOcean Spaces
+
+Checkout used to confirm an order and then forget it. Orders are now saved, and each receipt is stored in DigitalOcean Spaces when that service is configured.
+
+### What was added and why
+
+- **Saved orders**  
+  Placing an order writes the customer, line items, total, and status to the database so the shop can track what was purchased after the cart is cleared.
+
+- **Order list and detail**  
+  A customer can review orders placed with their account email. Shop staff (the account in `ADMIN_EMAIL`) can see every order and move it through placed, processing, shipped, delivered, or cancelled.
+
+- **DigitalOcean Spaces receipts**  
+  Each order writes a text receipt to a Spaces bucket so the record is backed by object storage. If Spaces credentials are not set, the same receipt is saved on the app server, which keeps local development and tests working.
+
