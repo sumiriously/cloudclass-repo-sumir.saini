@@ -59,3 +59,18 @@ Checkout used to confirm an order and then forget it. Orders are now saved, and 
 - **DigitalOcean Spaces receipts**  
   Each order writes a text receipt to a Spaces bucket so the record is backed by object storage. If Spaces credentials are not set, the same receipt is saved on the app server, which keeps local development and tests working.
 
+## Feature Added: Simulated Load Balancer and Scaling
+
+A single Flask process is a single point of failure and a single capacity limit. `load_balancing/` runs several copies of a small shop page and a round-robin balancer in front of them.
+
+### What was added and why
+
+- **Two application instances (`app1`, `app2`)**  
+  The same page runs on ports 5000 and 5001 so traffic can be spread instead of landing on one process.
+
+- **Round-robin load balancer (`load_balancer.py`, port 8000)**  
+  Each request is forwarded to the next healthy instance. Refreshing the balancer URL shows which app answered.
+
+- **Scale-out copies (`app3`, `app4`)**  
+  Starting another app and uncommenting its URL in `targets` adds it to the pool. That simulates auto-scaling locally, where new servers are started by hand instead of by a cloud platform.
+
