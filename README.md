@@ -1,6 +1,20 @@
 # Managing Web Applications Course
 
-This repository is used by Sumir Saini for exercises for the Managing Web Applications Course
+This repository is used by Sumir Saini for exercises for the Managing Web Applications Course.
+
+Full documentation of features, configuration, and challenges is in [DOCUMENTATION.md](DOCUMENTATION.md).
+
+## Run the shop
+
+```bash
+cd ecommerce_app
+python3 -m venv ../venv
+source ../venv/bin/activate
+pip install -r requirements.txt
+python run.py
+```
+
+Open http://127.0.0.1:5000/ui. Copy `.env.example` to `.env` before changing staff access or DigitalOcean Spaces. The load-balancing demo also uses port 5000, so stop it before starting the shop.
 
 ## Feature Added: Tiki Surf Shop Ecommerce App
 
