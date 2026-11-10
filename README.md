@@ -88,3 +88,18 @@ A single Flask process is a single point of failure and a single capacity limit.
 - **Scale-out copies (`app3`, `app4`)**  
   Starting another app and uncommenting its URL in `targets` adds it to the pool. That simulates auto-scaling locally, where new servers are started by hand instead of by a cloud platform.
 
+## Feature Added: Runtime Monitor
+
+The shop had a health check, but nothing showed what the running process was doing. Staff can now open Monitor and see requests, errors, and failed sign-ins for the current process.
+
+### What was added and why
+
+- **Request log and counters**  
+  Each request records its method, path, status, and duration so a running app can be checked without an external monitoring service.
+
+- **Failed sign-in tracking**  
+  Wrong passwords increment a counter. Three or more failures raise a warning on the monitor page so staff can see repeated attempts.
+
+- **Staff-only page (`/ui/monitor`)**  
+  The counts stay off the public site. `/health` still reports that the process is up, plus uptime and the request total.
+

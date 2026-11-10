@@ -52,6 +52,24 @@ Each request to http://127.0.0.1:8000 is forwarded to the next target. A down ta
 
 This is a local stand-in for auto-scaling. The extra processes are started by hand. A cloud platform would start them from a metric such as CPU or request rate. The lesson is the same: the balancer spreads traffic across whatever is in the pool.
 
+### Runtime monitor
+
+The shop already had a `/health` check, but that only said the process was up. Staff need a way to see what the running process is doing: how many requests it has handled, whether those requests are failing, and whether someone is repeatedly trying the wrong password.
+
+`/ui/monitor` is the staff page for that. It is available only to the account in `ADMIN_EMAIL`, and only while that shop process is running. The page shows:
+
+- uptime
+- request count
+- client errors (HTTP 4xx) and server errors (HTTP 5xx)
+- failed sign-ins
+- the latest 15 requests, with method, path, status, and duration
+
+The same request line is written to the application log. Static files such as CSS are skipped so they do not fill the list. Three or more failed sign-ins show a warning on the page. The counter records that a sign-in failed. It does not store the password or the attempted email.
+
+`/health` stays public so a host can check that the process is alive. It now includes uptime and the request total. It does not include paths or the failed-sign-in count.
+
+No extra environment variable turns the monitor on. It starts with the shop process. Restarting the process clears the counts, because they are kept in memory for that process only. A local screenshot of the staff page is in `ecommerce_app/screenshots/`.
+
 ## 3. Configuration
 
 Copy `ecommerce_app/.env.example` to `ecommerce_app/.env`. The application reads it on startup.
@@ -62,7 +80,7 @@ Copy `ecommerce_app/.env.example` to `ecommerce_app/.env`. The application reads
 | `DATABASE_URL` | SQLAlchemy database URL. The default is SQLite at `sqlite:///ecommerce.db`. A Postgres URL works with the installed `psycopg2` driver, including a DigitalOcean managed database. |
 | `PORT` | Port for `python run.py`. Default `5000`. |
 | `SESSION_COOKIE_SECURE` | `true` only when the site is on HTTPS. Leave `false` for local HTTP. |
-| `ADMIN_EMAIL` | Account that can see every order and change status. Register that email, then log in again after changing this value. |
+| `ADMIN_EMAIL` | Account that can see every order, change status, and open `/ui/monitor`. Register that email, then log in again after changing this value. |
 | `SPACES_KEY` | DigitalOcean Spaces access key. Leave blank to store receipts on the app server. |
 | `SPACES_SECRET` | Spaces secret key. |
 | `SPACES_BUCKET` | Bucket name. |
@@ -137,7 +155,9 @@ GitHub Actions (`.github/workflows/test.yml`) installs `ecommerce_app/requiremen
 
 **Port 5000 is shared.** The shop, Docker, and `app1` all default to port 5000. Starting the demo while the shop is running makes http://127.0.0.1:5000 show the demo page instead of the themed store. Stop one before starting the other.
 
-**Staff access is easy to misconfigure.** Only `ADMIN_EMAIL` marks an account as staff, and it is applied at registration or login. Setting it in `.env` does nothing until the process is restarted and that user logs in. There is no separate admin password in the application.
+**Staff access is easy to misconfigure.** Only `ADMIN_EMAIL` marks an account as staff, and it is applied at registration or login. Setting it in `.env` does nothing until the process is restarted and that user logs in. There is no separate admin password in the application. That same account is the only one that can open the monitor.
+
+**The monitor resets when the process stops.** Counts are stored in the running process, not in the database and not in an outside monitoring service. That matches a local or Codio run, and it avoids sending request paths off the machine. A restart, a second shop process, or the load-balancer demo starts a fresh set of counters. The public health check therefore cannot be used as a history of the shop. Staff have to look at `/ui/monitor` while that process is still up. Failed sign-ins are counted without the password, so the page can warn about repeated attempts without keeping the secret that was typed.
 
 ## 5. Layout
 
@@ -149,9 +169,11 @@ ecommerce_app/
   app/models.py          users, products, orders
   app/orders.py          place an order and enforce who can see it
   app/spaces.py          DigitalOcean Spaces or local receipt files
+  app/monitor.py         in-memory request and failed-sign-in counters
   app/routes/            auth, product API, and browser pages
-  app/templates/         Tiki Surf Shop pages
-  tests/                 auth, products, shop, and orders
+  app/templates/         Tiki Surf Shop pages, including the staff monitor
+  screenshots/           local browser capture of the monitor
+  tests/                 auth, products, shop, orders, and monitor
 load_balancing/
   load_balancer.py       round-robin proxy on port 8000
   app1/ … app4/          backend copies

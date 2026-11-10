@@ -1,4 +1,4 @@
-from flask import Blueprint, Response, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, Response, current_app, flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -73,6 +73,7 @@ def ui_login():
 
         user = User.query.filter_by(email=email).first()
         if not user or not check_password_hash(user.password_hash, password):
+            current_app.extensions["monitor"].record_failed_login()
             flash("Invalid credentials", "error")
             return render_template("login.html", email=email), 401
 
@@ -380,3 +381,16 @@ def ui_order_receipt(order_id):
     response = Response(body, mimetype="text/plain")
     response.headers["Content-Disposition"] = f'attachment; filename="order-{order.id}.txt"'
     return response
+
+
+@web.route("/ui/monitor", methods=["GET"])
+@login_required
+def ui_monitor():
+    if not current_user.is_admin:
+        flash("Only shop staff can view the monitor.", "error")
+        return redirect(url_for("web.ui_home"))
+    return render_template(
+        "monitor.html",
+        monitor=current_app.extensions["monitor"].snapshot(),
+        title="Monitor",
+    )

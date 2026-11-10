@@ -1,4 +1,5 @@
 import logging
+import time
 
 from flask import Flask, jsonify, redirect, request, url_for
 from flask_login import LoginManager
@@ -8,6 +9,7 @@ from werkzeug.exceptions import HTTPException
 from config import Config
 
 from .models import User, db
+from .monitor import RequestMonitor
 
 login_manager = LoginManager()
 migrate = Migrate()
@@ -27,6 +29,7 @@ def create_app():
     login_manager.init_app(app)
     migrate.init_app(app, db)
     login_manager.login_view = None
+    app.extensions["monitor"] = RequestMonitor()
 
     from .routes.auth import auth
     from .routes.products import products
@@ -42,7 +45,18 @@ def create_app():
 
     @app.route("/health", methods=["GET"])
     def health():
-        return jsonify({"status": "ok"}), 200
+        snapshot = app.extensions["monitor"].snapshot()
+        return jsonify(
+            {
+                "status": "ok",
+                "uptime_seconds": snapshot["uptime_seconds"],
+                "requests": snapshot["requests"],
+            }
+        ), 200
+
+    @app.before_request
+    def start_request_timer():
+        request.environ["monitor_started"] = time.perf_counter()
 
     @app.after_request
     def set_security_headers(response):
@@ -50,6 +64,22 @@ def create_app():
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Content-Security-Policy"] = "default-src 'self'"
+        started = request.environ.get("monitor_started")
+        if started is not None and not request.path.startswith("/static"):
+            duration_ms = (time.perf_counter() - started) * 1000
+            app.extensions["monitor"].record(
+                request.method,
+                request.path,
+                response.status_code,
+                duration_ms,
+            )
+            app.logger.info(
+                "%s %s -> %s (%.1fms)",
+                request.method,
+                request.path,
+                response.status_code,
+                duration_ms,
+            )
         return response
 
     @login_manager.unauthorized_handler

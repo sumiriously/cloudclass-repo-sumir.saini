@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+  <span class="eyebrow">Operations</span>
+  <h2>Monitor</h2>
+  <p class="lede">Live counts for this running process. They reset when the app stops. Failed sign-ins are tracked so staff can see repeated attempts.</p>
+
+  {% if monitor.alert %}
+    <div class="flash error">Repeated failed sign-ins: {{ monitor.failed_logins }}. Check who is trying to log in.</div>
+  {% endif %}
+
+  <div class="stat-grid">
+    <article class="panel stat-card">
+      <span>Uptime</span>
+      <strong>{{ monitor.uptime_seconds }}s</strong>
+    </article>
+    <article class="panel stat-card">
+      <span>Requests</span>
+      <strong>{{ monitor.requests }}</strong>
+    </article>
+    <article class="panel stat-card">
+      <span>Client errors</span>
+      <strong>{{ monitor.client_errors }}</strong>
+    </article>
+    <article class="panel stat-card">
+      <span>Server errors</span>
+      <strong>{{ monitor.server_errors }}</strong>
+    </article>
+    <article class="panel stat-card">
+      <span>Failed sign-ins</span>
+      <strong>{{ monitor.failed_logins }}</strong>
+    </article>
+  </div>
+
+  <h3>Recent requests</h3>
+  {% if monitor.recent %}
+    <div class="panel">
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Path</th>
+            <th>Status</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in monitor.recent %}
+            <tr>
+              <td>{{ item.method }}</td>
+              <td>{{ item.path }}</td>
+              <td><span class="badge {{ 'status-cancelled' if item.status >= 400 else 'status-delivered' }}">{{ item.status }}</span></td>
+              <td>{{ item.duration_ms }} ms</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state panel">
+      <p>No requests recorded yet.</p>
+    </div>
+  {% endif %}
+{% endblock %}

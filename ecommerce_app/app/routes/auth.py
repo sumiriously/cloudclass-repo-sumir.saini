@@ -1,6 +1,6 @@
 import re
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
 from flask_login import login_user, logout_user
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -61,6 +61,7 @@ def login():
         login_user(user)
         return jsonify({"message": "Logged in"}), 200
 
+    current_app.extensions["monitor"].record_failed_login()
     return jsonify({"message": "Invalid credentials"}), 401
 
 
